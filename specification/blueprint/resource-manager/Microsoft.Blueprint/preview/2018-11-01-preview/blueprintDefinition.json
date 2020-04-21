@@ -34,7 +34,7 @@
     }
   },
   "paths": {
-    "/{scope}/providers/Microsoft.Blueprint/blueprints/{blueprintName}": {
+    "/{resourceScope}/providers/Microsoft.Blueprint/blueprints/{blueprintName}": {
       "put": {
         "tags": [
           "Blueprint"
@@ -47,6 +47,9 @@
           },
           "ManagementGroupBlueprint": {
             "$ref": "./examples/managementGroupBPDef/Blueprint_Create.json"
+          },
+          "ResourceGroupWithTags": {
+            "$ref": "./examples/ResourceGroupWithTags.json"
           }
         },
         "parameters": [
@@ -150,7 +153,7 @@
         }
       }
     },
-    "/{scope}/providers/Microsoft.Blueprint/blueprints": {
+    "/{resourceScope}/providers/Microsoft.Blueprint/blueprints": {
       "get": {
         "tags": [
           "Blueprint"
@@ -186,7 +189,7 @@
         }
       }
     },
-    "/{scope}/providers/Microsoft.Blueprint/blueprints/{blueprintName}/artifacts/{artifactName}": {
+    "/{resourceScope}/providers/Microsoft.Blueprint/blueprints/{blueprintName}/artifacts/{artifactName}": {
       "put": {
         "tags": [
           "Artifact"
@@ -347,7 +350,7 @@
         }
       }
     },
-    "/{scope}/providers/Microsoft.Blueprint/blueprints/{blueprintName}/artifacts": {
+    "/{resourceScope}/providers/Microsoft.Blueprint/blueprints/{blueprintName}/artifacts": {
       "get": {
         "tags": [
           "Artifact"
@@ -386,7 +389,7 @@
         }
       }
     },
-    "/{scope}/providers/Microsoft.Blueprint/blueprints/{blueprintName}/versions/{versionId}": {
+    "/{resourceScope}/providers/Microsoft.Blueprint/blueprints/{blueprintName}/versions/{versionId}": {
       "put": {
         "tags": [
           "PublishedBlueprint"
@@ -413,6 +416,15 @@
           },
           {
             "$ref": "#/parameters/PublishedBlueprintVersionIdParameter"
+          },
+          {
+            "name": "publishedBlueprint",
+            "in": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/PublishedBlueprint"
+            },
+            "description": "Published Blueprint to create or update."
           }
         ],
         "responses": {
@@ -502,7 +514,7 @@
         }
       }
     },
-    "/{scope}/providers/Microsoft.Blueprint/blueprints/{blueprintName}/versions": {
+    "/{resourceScope}/providers/Microsoft.Blueprint/blueprints/{blueprintName}/versions": {
       "get": {
         "tags": [
           "PublishedBlueprint"
@@ -541,7 +553,7 @@
         }
       }
     },
-    "/{scope}/providers/Microsoft.Blueprint/blueprints/{blueprintName}/versions/{versionId}/artifacts/{artifactName}": {
+    "/{resourceScope}/providers/Microsoft.Blueprint/blueprints/{blueprintName}/versions/{versionId}/artifacts/{artifactName}": {
       "get": {
         "tags": [
           "PublishedArtifact"
@@ -550,22 +562,22 @@
         "description": "Get an artifact for a published blueprint definition.",
         "x-ms-examples": {
           "Sub-ARMTemplateArtifact": {
-            "$ref": "./examples/subscriptionBPDef/ARMTemplateArtifact_Get.json"
+            "$ref": "./examples/subscriptionBPDef/SealedARMTemplateArtifact_Get.json"
           },
           "Sub-PolicyAssignmentArtifact": {
-            "$ref": "./examples/subscriptionBPDef/PolicyAssignmentArtifact_Get.json"
+            "$ref": "./examples/subscriptionBPDef/SealedPolicyAssignmentArtifact_Get.json"
           },
           "Sub-RoleAssignmentArtifact": {
-            "$ref": "./examples/subscriptionBPDef/RoleAssignmentArtifact_Get.json"
+            "$ref": "./examples/subscriptionBPDef/SealedRoleAssignmentArtifact_Get.json"
           },
           "MG-ARMTemplateArtifact": {
-            "$ref": "./examples/managementGroupBPDef/ARMTemplateArtifact_Get.json"
+            "$ref": "./examples/managementGroupBPDef/SealedARMTemplateArtifact_Get.json"
           },
           "MG-PolicyAssignmentArtifact": {
-            "$ref": "./examples/managementGroupBPDef/PolicyAssignmentArtifact_Get.json"
+            "$ref": "./examples/managementGroupBPDef/SealedPolicyAssignmentArtifact_Get.json"
           },
           "MG-RoleAssignmentArtifact": {
-            "$ref": "./examples/managementGroupBPDef/RoleAssignmentArtifact_Get.json"
+            "$ref": "./examples/managementGroupBPDef/SealedRoleAssignmentArtifact_Get.json"
           }
         },
         "parameters": [
@@ -595,7 +607,7 @@
         }
       }
     },
-    "/{scope}/providers/Microsoft.Blueprint/blueprints/{blueprintName}/versions/{versionId}/artifacts": {
+    "/{resourceScope}/providers/Microsoft.Blueprint/blueprints/{blueprintName}/versions/{versionId}/artifacts": {
       "get": {
         "tags": [
           "PublishedArtifact"
@@ -824,16 +836,34 @@
           ],
           "x-ms-enum": {
             "name": "BlueprintTargetScope",
-            "modelAsString": true
+            "modelAsString": true,
+            "values": [
+              {
+                "value": "subscription",
+                "description": "The blueprint targets a subscription during blueprint assignment."
+              },
+              {
+                "value": "managementGroup",
+                "description": "The blueprint targets a management group during blueprint assignment. This is reserved for future use."
+              }
+            ]
           }
         },
         "parameters": {
           "description": "Parameters required by this blueprint definition.",
-          "$ref": "#/definitions/ParameterDefinitionCollection"
+          "type": "object",
+          "additionalProperties": {
+            "description": "Named collection of parameter metadata.",
+            "$ref": "#/definitions/ParameterDefinition"
+          }
         },
         "resourceGroups": {
           "description": "Resource group placeholders defined by this blueprint definition.",
-          "$ref": "#/definitions/ResourceGroupDefinitionCollection"
+          "type": "object",
+          "additionalProperties": {
+            "description": "Named collection for resourceGroupDefinition.",
+            "$ref": "#/definitions/ResourceGroupDefinition"
+          }
         }
       },
       "allOf": [
@@ -847,7 +877,9 @@
       "type": "object",
       "x-ms-external": true,
       "allOf": [
-        { "$ref": "#/definitions/SharedBlueprintProperties" }
+        {
+          "$ref": "#/definitions/SharedBlueprintProperties"
+        }
       ],
       "properties": {
         "versions": {
@@ -868,7 +900,9 @@
       "type": "object",
       "x-ms-external": true,
       "allOf": [
-        { "$ref": "#/definitions/SharedBlueprintProperties" }
+        {
+          "$ref": "#/definitions/SharedBlueprintProperties"
+        }
       ],
       "properties": {
         "blueprintName": {
@@ -885,10 +919,11 @@
     "BlueprintStatus": {
       "description": "The status of the blueprint. This field is readonly.",
       "type": "object",
-      "properties": {
-      },
+      "properties": {},
       "allOf": [
-        { "$ref": "#/definitions/BlueprintResourceStatusBase" }
+        {
+          "$ref": "#/definitions/BlueprintResourceStatusBase"
+        }
       ]
     },
     "TemplateArtifactProperties": {
@@ -904,8 +939,12 @@
           "description": "If applicable, the name of the resource group placeholder to which the Resource Manager template blueprint artifact will be deployed."
         },
         "parameters": {
+          "type": "object",
           "description": "Resource Manager template blueprint artifact parameter values.",
-          "$ref": "#/definitions/ParameterValueCollection"
+          "additionalProperties": {
+            "description": "Key/Value pair of parameter fulfillment.",
+            "$ref": "#/definitions/ParameterValue"
+          }
         }
       },
       "allOf": [
@@ -999,8 +1038,12 @@
           "description": "Azure resource ID of the policy definition."
         },
         "parameters": {
+          "type": "object",
           "description": "Parameter values for the policy definition.",
-          "$ref": "#/definitions/ParameterValueCollection"
+          "additionalProperties": {
+            "description": "Key/Value pair of parameter fulfillment.",
+            "$ref": "#/definitions/ParameterValue"
+          }
         },
         "resourceGroup": {
           "type": "string",
@@ -1040,51 +1083,20 @@
         "properties"
       ]
     },
-    "ParameterValueCollection": {
-      "description": "A dictionary for parameters and their corresponding values.",
-      "type": "object",
-      "properties": {},
-      "additionalProperties": {
-        "description": "Key/Value pair of parameter fulfillment.",
-        "$ref": "#/definitions/ParameterValueBase"
-      }
-    },
-    "ParameterValueBase": {
-      "description": "Base class for ParameterValue.",
-      "type": "object",
-      "properties": {
-        "description": {
-          "description": "Optional property. Establishes ParameterValueBase as a BaseClass.",
-          "type": "string"
-        }
-      }
-    },
     "ParameterValue": {
-      "description": "Value for the specified parameter.",
+      "description": "Value for the specified parameter. Can be either 'value' or 'reference' but not both.",
       "type": "object",
       "properties": {
         "value": {
-          "description": "Actual value."
-        }
-      },
-      "required": [ "value" ],
-      "allOf": [
-        { "$ref": "#/definitions/ParameterValueBase" }
-      ]
-    },
-    "SecretReferenceParameterValue": {
-      "description": "The reference to a secret, if the parameter should be protected.",
-      "type": "object",
-      "properties": {
+          "type": "object",
+          "description": "Parameter value. Any valid JSON value is allowed including objects, arrays, strings, numbers and booleans."
+        },
         "reference": {
-          "description": "Specifies the reference.",
+          "type": "object",
+          "description": "Parameter value as reference type.",
           "$ref": "#/definitions/SecretValueReference"
         }
-      },
-      "required": [ "reference" ],
-      "allOf": [
-        { "$ref": "#/definitions/ParameterValueBase" }
-      ]
+      }
     },
     "SecretValueReference": {
       "description": "Reference to a Key Vault secret.",
@@ -1099,7 +1111,7 @@
           "type": "string"
         },
         "secretVersion": {
-          "description": "If multiple versions, the version of the secret.",
+          "description": "The version of the secret to use. If left blank, the latest version of the secret is used.",
           "type": "string"
         }
       },
@@ -1117,16 +1129,9 @@
           "type": "string"
         }
       },
-      "required": [ "id" ]
-    },
-    "ParameterDefinitionCollection": {
-      "description": "A dictionary hold parameter name and its metadata.",
-      "type": "object",
-      "properties": {},
-      "additionalProperties": {
-        "description": "Named collection of parameter metadata.",
-        "$ref": "#/definitions/ParameterDefinition"
-      }
+      "required": [
+        "id"
+      ]
     },
     "ParameterDefinition": {
       "description": "Represent a parameter with constrains and metadata.",
@@ -1169,15 +1174,6 @@
         "type"
       ]
     },
-    "ResourceGroupDefinitionCollection": {
-      "description": "A dictionary which maps resource group placeholders to the resource groups which will be created.",
-      "type": "object",
-      "properties": {},
-      "additionalProperties": {
-        "description": "Named collection for resourceGroupDefinition.",
-        "$ref": "#/definitions/ResourceGroupDefinition"
-      }
-    },
     "ResourceGroupDefinition": {
       "description": "Represents an Azure resource group in a blueprint definition.",
       "type": "object",
@@ -1205,6 +1201,13 @@
             "type": "string",
             "description": "Name of peer artifact."
           }
+        },
+        "tags": {
+          "description": "Tags to be assigned to this resource group.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       }
     },
@@ -1224,32 +1227,8 @@
         },
         "strongType": {
           "type": "string",
-          "description": "StrongType for UI to render rich experience during blueprint assignment.",
+          "description": "StrongType for UI to render rich experience during blueprint assignment. Supported strong types are resourceType, principalId and location.",
           "maxLength": 64
-        }
-      }
-    },
-    "ResourceGroupValueCollection": {
-      "description": "A dictionary which maps resource group placeholders to the resource groups which will be created.",
-      "type": "object",
-      "properties": {},
-      "additionalProperties": {
-        "$ref": "#/definitions/ResourceGroupValue"
-      }
-    },
-    "ResourceGroupValue": {
-      "description": "Represents an Azure resource group.",
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "Name of the resource group.",
-          "minLength": 1,
-          "maxLength": 90
-        },
-        "location": {
-          "type": "string",
-          "description": "Location of the resource group."
         }
       }
     },
@@ -1313,11 +1292,13 @@
       "properties": {
         "timeCreated": {
           "type": "string",
+          "format": "date-time",
           "readOnly": true,
           "description": "Creation time of this blueprint definition."
         },
         "lastModified": {
           "type": "string",
+          "format": "date-time",
           "readOnly": true,
           "description": "Last modified time of this blueprint definition."
         }
@@ -1325,8 +1306,8 @@
     }
   },
   "parameters": {
-    "ScopeParameter":{
-      "name": "scope",
+    "ScopeParameter": {
+      "name": "resourceScope",
       "in": "path",
       "required": true,
       "type": "string",
